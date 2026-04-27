@@ -1,19 +1,23 @@
 import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
 // We define what the parameters are (: string) to fix the red lines
-export const registerUser = async (email: string, password: string) => {
+export const registerUser = async (email: string, password: string, username: string, birthday: string) => {
   try {
+    // 1. Create the user account in Firebase Auth
     const userCredential = await auth().createUserWithEmailAndPassword(email, password);
-    console.log('User account created & signed in!');
+    const { uid } = userCredential.user;
+
+    // 2. Store the Username in the Firestore 'Users' collection
+    await firestore().collection('Users').doc(uid).set({
+      username: username,
+      email: email,
+      birthday: birthday, 
+      createdAt: firestore.FieldValue.serverTimestamp(),
+    });
+
     return userCredential.user;
-  } catch (error: any) { // Adding ': any' allows us to read error.code
-    // Basic error handling for the transfer
-    if (error.code === 'auth/email-already-in-use') {
-      console.log('That email address is already in use!');
-    }
-    if (error.code === 'auth/invalid-email') {
-      console.log('That email address is invalid!');
-    }
+  } catch (error: any) {
     throw error;
   }
 };
