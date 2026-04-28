@@ -5,7 +5,7 @@ import { AuthNavigator } from './src/navigation/AuthNavigator'; // Your traffic 
 const App = () => {
   return (
     <NavigationContainer>
-      <AuthNavigator />
+      <AuthNavigator/>
     </NavigationContainer>
   );
 };
