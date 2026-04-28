@@ -63,7 +63,7 @@ const RegisterScreen = ({ navigation }: any) => {
       // 2. Call the "Brains" in your service
       await registerUser(email, password, username, birthday);
       Alert.alert('Success', 'Account created successfully!');
-      navigation.navigate('Login'); // Redirect back to login
+      navigation.replace('PickAGenre');  // Redirect to PickAGenre
     } catch (error: any) {
       Alert.alert('Registration Failed', error.message);
     }
