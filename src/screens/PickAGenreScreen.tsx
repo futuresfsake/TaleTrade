@@ -19,7 +19,6 @@ const GENRES = [
 ];
 
 export default function PickAGenreScreen({ navigation }: any) {
-  // These were the missing names you were looking for!
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -32,26 +31,32 @@ export default function PickAGenreScreen({ navigation }: any) {
   };
 
   const handleNext = async () => {
-  if (selected.length < 3) return;
-  
-  // Use the native SDK call
-  const user = auth().currentUser; 
+    if (selected.length < 3) {
+      Alert.alert("Select at least 3 genres");
+      return;
+    }
 
-  if (!user) {
-    Alert.alert("Error", "Please log in first!");
-    return;
-  }
+    const user = auth().currentUser;
 
-  setLoading(true);
-  try {
-    await saveUserGenres(user.uid, selected);
-    navigation.navigate('Home'); 
-  } catch (error) {
-    Alert.alert("Error", "Failed to save preferences.");
-  } finally {
-    setLoading(false);
-  }
-};
+    if (!user) {
+      Alert.alert("Error", "Please log in first!");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await saveUserGenres(user.uid, selected);
+
+      // ✅ Navigate to Home
+      navigation.replace('Home');
+
+    } catch (error) {
+      Alert.alert("Error", "Failed to save preferences.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -63,8 +68,8 @@ export default function PickAGenreScreen({ navigation }: any) {
       <View style={styles.titleContainer}>
         <Text style={styles.titleText}>Tell us your favorite</Text>
         <View style={styles.underlineContainer}>
-           <Text style={styles.titleText}>genre/s</Text>
-           <View style={styles.underline} />
+          <Text style={styles.titleText}>genre/s</Text>
+          <View style={styles.underline} />
         </View>
         <Text style={styles.subtitle}>Choose 3 or more</Text>
       </View>
@@ -113,7 +118,7 @@ export default function PickAGenreScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FDFCF0' }, // Off-white/cream background
+  container: { flex: 1, backgroundColor: '#FDFCF0' },
   header: { padding: 20 },
   skipText: { color: '#6B7280', fontSize: 16 },
   titleContainer: { alignItems: 'center', marginTop: 10, marginBottom: 30 },
@@ -148,12 +153,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
-  buttonDisabled: { backgroundColor: '#C4B5FD', elevation: 0 },
+  buttonDisabled: { backgroundColor: '#C4B5FD' },
   nextButtonText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' }
 });
