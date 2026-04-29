@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,9 +11,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { Settings, BookOpen, Clock, LogOut, ChevronRight } from 'lucide-react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-// Your Brand Palette
 const COLORS = {
   primaryBlue: '#4A68BE',
   softPurple: '#7E6FB0',
@@ -22,16 +20,6 @@ const COLORS = {
 };
 
 const { width } = Dimensions.get('window');
-
-// Navigation Types
-type RootStackParamList = {
-  Home: undefined;
-  Search: undefined;
-  Profile: undefined;
-  Settings: undefined;
-};
-
-type Props = NativeStackScreenProps<RootStackParamList, 'Profile'>;
 
 // --- HELPER COMPONENTS ---
 
@@ -42,14 +30,7 @@ const StatItem = ({ value, label }: { value: string; label: string }) => (
   </View>
 );
 
-interface MenuItemProps {
-  icon: React.ElementType;
-  label: string;
-  onPress: () => void;
-  isLast?: boolean;
-}
-
-const MenuItem = ({ icon: Icon, label, onPress, isLast = false }: MenuItemProps) => (
+const MenuItem = ({ icon: Icon, label, onPress, isLast = false }: any) => (
   <TouchableOpacity
     style={[styles.menuItem, isLast && styles.menuItemLast]}
     onPress={onPress}
@@ -67,7 +48,25 @@ const MenuItem = ({ icon: Icon, label, onPress, isLast = false }: MenuItemProps)
 
 // --- MAIN SCREEN ---
 
-const ProfileScreen = ({ navigation }: Props) => {
+const ProfileScreen = ({ navigation, route }: any) => {
+  // 1. Local State for User Info (This makes it "Changeable")
+  const [userName, setUserName] = useState('Jane Doe');
+  const [initials, setInitials] = useState('JD');
+
+  // 2. Listen for changes coming back from the Settings Screen
+  useEffect(() => {
+    if (route.params?.updatedName) {
+      setUserName(route.params.updatedName);
+      
+      // Automatically update initials based on new name
+      const nameParts = route.params.updatedName.split(' ');
+      const newInitials = nameParts.length > 1 
+        ? (nameParts[0][0] + nameParts[1][0]).toUpperCase()
+        : nameParts[0][0].toUpperCase();
+      setInitials(newInitials);
+    }
+  }, [route.params?.updatedName]);
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -77,11 +76,10 @@ const ProfileScreen = ({ navigation }: Props) => {
       >
         <View style={styles.mainWrapper}>
           
-          {/* Header Section - Now Lowered */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Profile</Text>
             <TouchableOpacity
-              onPress={() => navigation.navigate('Settings')}
+              onPress={() => navigation.navigate('Settings', { currentName: userName })}
               style={styles.settingsButton}
               activeOpacity={0.7}
             >
@@ -89,23 +87,21 @@ const ProfileScreen = ({ navigation }: Props) => {
             </TouchableOpacity>
           </View>
 
-          {/* Avatar Section */}
+          {/* Avatar Section - Now using State Variables */}
           <View style={styles.avatarSection}>
             <View style={styles.avatarCircle}>
-              <Text style={styles.avatarInitials}>JD</Text>
+              <Text style={styles.avatarInitials}>{initials}</Text>
             </View>
-            <Text style={styles.userName}>Jane Doe</Text>
+            <Text style={styles.userName}>{userName}</Text>
             <Text style={styles.userJoined}>Joined: Jan 2024</Text>
           </View>
 
-          {/* Stats Section */}
           <View style={styles.statsContainer}>
             <StatItem value="12" label="Tales Read" />
             <View style={{ width: 15 }} />
             <StatItem value="4" label="Tales Traded" />
           </View>
 
-          {/* Menu Section */}
           <View style={styles.menuContainer}>
             <Text style={styles.menuTitle}>Library</Text>
             <MenuItem 
@@ -139,7 +135,7 @@ const styles = StyleSheet.create({
   },
   mainWrapper: {
     paddingHorizontal: 25,
-    paddingTop: Platform.OS === 'ios' ? 30 : 50, 
+    paddingTop: Platform.OS === 'ios' ? 30 : 60, 
   },
   scrollContent: {
     paddingBottom: 140,
