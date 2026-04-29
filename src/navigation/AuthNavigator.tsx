@@ -21,9 +21,9 @@ export const AuthNavigator = () => {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="PickAGenre" component={PickAGenreScreen} />
-      <Stack.Screen name="Home" component={HomeScreen}/>
+      {/* <Stack.Screen name="Home" component={HomeScreen}/>
       <Stack.Screen name="Profile" component={ProfileScreen}/>
-      <Stack.Screen name="Settings" component={SettingScreen}/>
+      <Stack.Screen name="Settings" component={SettingScreen}/> */}
     </Stack.Navigator>
   );
 };
