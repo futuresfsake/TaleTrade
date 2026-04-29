@@ -1,72 +1,196 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Button, TouchableOpacity, Alert } from 'react-native';
-import { loginUser } from '../../services/authService'; // The Logic Connection
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  Image
+} from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import { loginUser } from '../../services/authService';
 
 const LoginScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = async () => {
-  if (!email || !password) {
-    Alert.alert('Error', 'Please enter both email and password');
-    return;
-  }
-
-  try {
-    // 1. The Backend Handshake: Verifying credentials with Firebase
-    await loginUser(email, password);
-    
-    // 2. The Logic Transfer: Redirecting to PickAGenre
-    // We use .replace so the user can't press 'back' to return to Login
-    navigation.replace('PickAGenre'); 
-    
-  } catch (error: any) {
-    let errorMessage = 'An error occurred during login.';
-    if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-      errorMessage = 'Invalid email or password.';
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter both email and password');
+      return;
     }
-    Alert.alert('Login Failed', errorMessage);
-  }
-};
+
+    try {
+      await loginUser(email, password);
+      navigation.replace('Home');
+    } catch (error: any) {
+      let errorMessage = 'An error occurred during login.';
+      // if (
+      //   error.code === 'auth/user-not-found' ||
+      //   error.code === 'auth/wrong-password'
+      // ) 
+      {
+        errorMessage = 'Invalid email or password.';
+      }
+      Alert.alert('Login Failed', errorMessage);
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>TaleTrade Login</Text>
 
+      {/* LOGO */}
+      <Image
+        source={require('../../assets/Logo.png')}
+        style={styles.logo}
+        resizeMode="contain"
+      />
+
+      {/* TITLE */}
+      <Text style={styles.title}>Welcome Back</Text>
+
+      {/* EMAIL */}
       <TextInput
         style={styles.input}
         placeholder="Email"
+        placeholderTextColor="#999"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
         autoCapitalize="none"
       />
 
+      {/* PASSWORD */}
       <TextInput
         style={styles.input}
         placeholder="Password"
+        placeholderTextColor="#999"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
 
-      <View style={styles.buttonContainer}>
-        <Button title="Login" onPress={handleLogin} color="#2ecc71" />
+      {/* LOGIN BUTTON */}
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+        <Text style={styles.buttonText}>Login</Text>
+      </TouchableOpacity>
+
+      {/* DIVIDER */}
+      <View style={styles.dividerContainer}>
+        <View style={styles.line} />
+        <Text style={styles.orText}>or log in with</Text>
+        <View style={styles.line} />
       </View>
 
+      {/* SOCIAL BUTTONS */}
+      <View style={styles.socialContainer}>
+        <TouchableOpacity style={styles.socialBtn}>
+          <Icon name="google" size={20} color="#DB4437" />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.socialBtn}>
+          <Icon name="facebook" size={20} color="#1877F2" />
+        </TouchableOpacity>
+      </View>
+
+      {/* SIGNUP LINK */}
       <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-        <Text style={styles.linkText}>Don't have an account? Register here.</Text>
+        <Text style={styles.linkText}>
+          Don’t have an account? Register
+        </Text>
       </TouchableOpacity>
+
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 30, justifyContent: 'center', backgroundColor: '#fff' },
-  title: { fontSize: 28, marginBottom: 40, textAlign: 'center', fontWeight: 'bold' },
-  input: { borderBottomWidth: 1, borderBottomColor: '#ccc', marginBottom: 25, padding: 10, fontSize: 16 },
-  buttonContainer: { marginTop: 10 },
-  linkText: { color: '#3498db', marginTop: 25, textAlign: 'center', textDecorationLine: 'underline' }
+  container: {
+    flex: 1,
+    backgroundColor: '#E8DDC7',
+    padding: 30,
+    justifyContent: 'center',
+  },
+
+  logo: {
+    width: 500,
+    height: 320,
+    alignSelf: 'center',
+    marginBottom: 10,
+  },
+
+  title: {
+    fontSize: 40,
+    textAlign: 'center',
+    marginBottom: 25,
+    fontWeight: 'bold',
+    color: '#4A4A4A',
+  },
+
+  input: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+
+  button: {
+    backgroundColor: '#6C63A8',
+    padding: 15,
+    borderRadius: 20,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#ccc',
+  },
+
+  orText: {
+    marginHorizontal: 10,
+    color: '#555',
+    fontSize: 14,
+    fontWeight: 'bold', 
+  },
+
+  socialContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 20,
+  },
+
+  socialBtn: {
+    backgroundColor: '#fff',
+    width: 55,
+    height: 55,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3,
+  },
+
+  linkText: {
+    color: '#6C63A8',
+    marginTop: 25,
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
 });
 
 export default LoginScreen;

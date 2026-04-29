@@ -14,30 +14,25 @@ const LaunchScreen = ({ navigation }: any) => {
         
         {/* Top Row: Tale + Logo */}
         <View style={styles.topRow}>
-          <Text style={styles.tale}>Tale</Text>
-
           <Image
             source={require('../assets/Logo.png')}
             style={styles.logoImage}
             resizeMode="contain"
           />
         </View>
-
-        {/* Second Line */}
-        <Text style={styles.trade}>Trade</Text>
       </View>
 
       {/* WAVE */}
       <View style={styles.waveContainer}>
-        <Svg height="240" width="100%" viewBox="0 0 1440 320">
+        <Svg height="320" width="100%" viewBox="0 0 1440 320" preserveAspectRatio="none">
           <Path
             fill="#6C63A8"
             d="
-              M0,220
-              C180,120 420,60 720,140
-              C1020,220 1260,260 1440,160
-              L1440,320
-              L0,320
+              M0,240 
+              C200,100 500,100 720,240 
+              C850,50 1300,50 1440,120 
+              L1440,320 
+              L0,320 
               Z
             "
           />
@@ -82,8 +77,8 @@ const styles = StyleSheet.create({
   },
 
   logoImage: {
-    width: 50,
-    height: 40,
+    width: 600,
+    height: 500,
     marginLeft: 5,
   },
 
