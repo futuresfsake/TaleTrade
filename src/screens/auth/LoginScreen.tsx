@@ -22,17 +22,14 @@ const LoginScreen = ({ navigation }: any) => {
     }
 
     try {
+      // ✅ JUST CALL LOGIN: App.tsx handles the navigation automatically
       await loginUser(email, password);
-      navigation.replace('Home');
+      
+      // DELETED: navigation.replace('Home'); 
+      // Keeping this line is what causes the "Not handled by navigator" error.
+      
     } catch (error: any) {
-      let errorMessage = 'An error occurred during login.';
-      // if (
-      //   error.code === 'auth/user-not-found' ||
-      //   error.code === 'auth/wrong-password'
-      // ) 
-      {
-        errorMessage = 'Invalid email or password.';
-      }
+      let errorMessage = 'Invalid email or password.';
       Alert.alert('Login Failed', errorMessage);
     }
   };
@@ -112,14 +109,12 @@ const styles = StyleSheet.create({
     padding: 30,
     justifyContent: 'center',
   },
-
   logo: {
     width: 500,
     height: 320,
     alignSelf: 'center',
     marginBottom: 10,
   },
-
   title: {
     fontSize: 40,
     textAlign: 'center',
@@ -127,7 +122,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#4A4A4A',
   },
-
   input: {
     backgroundColor: '#fff',
     borderRadius: 10,
@@ -136,7 +130,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
   },
-
   button: {
     backgroundColor: '#6C63A8',
     padding: 15,
@@ -144,37 +137,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
-
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
   },
-
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 20,
   },
-
   line: {
     flex: 1,
     height: 1,
     backgroundColor: '#ccc',
   },
-
   orText: {
     marginHorizontal: 10,
     color: '#555',
     fontSize: 14,
     fontWeight: 'bold', 
   },
-
   socialContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 20,
   },
-
   socialBtn: {
     backgroundColor: '#fff',
     width: 55,
@@ -184,7 +171,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 3,
   },
-
   linkText: {
     color: '#6C63A8',
     marginTop: 25,

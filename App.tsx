@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, ActivityIndicator } from 'react-native'; // Added these
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { FirebaseAuthTypes } from '@react-native-firebase/auth';
+import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth'; 
+
 import { AuthNavigator } from './src/navigation/AuthNavigator';
 import TabNavigator from './src/navigation/TabNavigator';
-import auth from '@react-native-firebase/auth'; 
+import PickAGenreScreen from './src/screens/PickAGenreScreen';
 
 const RootStack = createNativeStackNavigator();
 
@@ -14,28 +15,28 @@ const App = () => {
   const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
 
   useEffect(() => {
-    const subscriber = auth().onAuthStateChanged((userState) => {
+    // Listener 1: Handles Login and Logout
+    const authSubscriber = auth().onAuthStateChanged((userState) => {
       setUser(userState);
-      setInitializing(false); // Set to false directly here
+      if (initializing) setInitializing(false);
     });
 
-    // Failsafe: If Firebase takes longer than 3 seconds, stop "initializing"
-    // so you can at least see the Auth screens.
-    const timer = setTimeout(() => {
-      if (initializing) setInitializing(false);
-    }, 3000);
+    // Listener 2: Handles Profile Updates (Crucial for the Genre -> Home switch)
+    const userSubscriber = auth().onUserChanged((userState) => {
+      if (userState) {
+        setUser(userState);
+      }
+    });
 
     return () => {
-      subscriber();
-      clearTimeout(timer);
+      authSubscriber();
+      userSubscriber();
     };
-  }, []);
+  }, [initializing]);
 
-  // Instead of returning null (which is a black screen), 
-  // return a View with your cream background color!
   if (initializing) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#F5E9CF', justifyContent: 'center', alignItems: 'center' }}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#4A68BE" />
       </View>
     );
@@ -45,13 +46,40 @@ const App = () => {
     <NavigationContainer>
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
-          <RootStack.Screen name="AppTabs" component={TabNavigator} />
+          // If the user is logged in but has no displayName, they stay in Onboarding
+          !user.displayName ? (
+            <RootStack.Screen 
+              name="Onboarding" 
+              component={PickAGenreScreen} 
+              key="onboarding-screen"
+            />
+          ) : (
+            // Once displayName is set, they are moved to the main App
+            <RootStack.Screen 
+              name="AppTabs" 
+              component={TabNavigator} 
+              key="main-app-tabs"
+            />
+          )
         ) : (
-          <RootStack.Screen name="Auth" component={AuthNavigator} />
+          <RootStack.Screen 
+            name="Auth" 
+            component={AuthNavigator} 
+            key="auth-stack"
+          />
         )}
       </RootStack.Navigator>
     </NavigationContainer>
   );
 };
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1, 
+    backgroundColor: '#F5E9CF', 
+    justifyContent: 'center', 
+    alignItems: 'center'
+  }
+});
 
 export default App;
