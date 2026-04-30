@@ -69,7 +69,7 @@ const RegisterScreen = ({ navigation }: any) => {
     try {
       await registerUser(email, password, username, birthday);
       Alert.alert('Success', 'Account created successfully!');
-      navigation.replace('PickAGenre');
+      // navigation.replace('PickAGenre');
     } catch (error: any) {
       Alert.alert('Registration Failed', error.message);
     }

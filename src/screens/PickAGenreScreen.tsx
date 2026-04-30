@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import { saveUserGenres } from '../services/genreService';
+import { getUsername } from '../services/userService';
 
 const GENRES = [
   "Contemporary", "Memoir", "Dystopian", "Self-Help", 
@@ -37,21 +38,34 @@ export default function PickAGenreScreen({ navigation }: any) {
     }
 
     const user = auth().currentUser;
-
-    if (!user) {
-      Alert.alert("Error", "Please log in first!");
-      return;
-    }
+    if (!user) return;
 
     setLoading(true);
     try {
+      // 1. Save preferences to your database
       await saveUserGenres(user.uid, selected);
 
-      // ✅ Navigate to Home
-      navigation.replace('Home');
+      // 2. Fetch the username from your database (stored during registration)
+      const dbUsername = await getUsername(user.uid);
+
+      // 3. Update the Firebase Auth Profile. 
+      // This is what App.tsx is watching to decide when to show the Home Screen.
+      await user.updateProfile({
+        displayName: dbUsername || "Explorer" 
+      });
+
+      // 4. Force a reload so the local user object updates its displayName
+      await user.reload();
+
+      /* 
+         STRICT RULE: No navigation.navigate('AppTabs') here. 
+         App.tsx will automatically detect the displayName change 
+         and swap the screens for you. 
+      */
 
     } catch (error) {
-      Alert.alert("Error", "Failed to save preferences.");
+      console.error("Genre Selection Error:", error);
+      Alert.alert("Error", "Failed to save preferences. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -74,7 +88,7 @@ export default function PickAGenreScreen({ navigation }: any) {
         <Text style={styles.subtitle}>Choose 3 or more</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.genreCloud}>
+      <ScrollView contentContainerStyle={styles.genreCloud} showsVerticalScrollIndicator={false}>
         {GENRES.map((genre) => {
           const isSelected = selected.includes(genre);
           return (
@@ -85,6 +99,7 @@ export default function PickAGenreScreen({ navigation }: any) {
                 styles.genreItem,
                 isSelected && styles.genreItemSelected
               ]}
+              activeOpacity={0.7}
             >
               <Text style={[
                 styles.genreText,
