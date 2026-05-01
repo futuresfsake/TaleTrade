@@ -27,8 +27,6 @@ const SettingScreen = ({ navigation }: any) => {
     if (!user) return;
 
     const trimmedName = newName.trim();
-
-    // Validation
     if (trimmedName.length < 3) {
       Alert.alert("Too Short", "Username must be at least 3 characters long! ✨");
       return;
@@ -42,7 +40,6 @@ const SettingScreen = ({ navigation }: any) => {
     try {
       await user.updateProfile({ displayName: trimmedName });
       await updateUserInDb(user.uid, trimmedName);
-
       Alert.alert("Success!", "Profile updated successfully ✨", [
         { text: "OK", onPress: () => navigation.navigate('ProfileMain') }
       ]);
@@ -84,10 +81,32 @@ const SettingScreen = ({ navigation }: any) => {
           onPress: async () => {
             try {
               const uid = user.uid;
+              
+              // 1. Delete Firestore data FIRST while user is still authenticated
               await firestore().collection('Users').doc(uid).delete();
+              
+              // 2. Delete the Auth account
               await user.delete();
+
+              // 3. Success Alert (Show this BEFORE signing out/navigating)
+              Alert.alert("Account Deleted", "Your account has been permanently removed. 👋");
+              
+              // 4. Explicitly sign out to clean up local cache
+              await auth().signOut();
+              
             } catch (error: any) {
-              Alert.alert("Re-authentication Required", "Please log out and back in to verify it's you.");
+              // Check if the error happened BECAUSE the user was already deleted 
+              // (which means it actually succeeded)
+              if (!auth().currentUser) {
+                Alert.alert("Account Deleted", "Your account has been removed. 👋");
+                return;
+              }
+
+              if (error.code === 'auth/requires-recent-login') {
+                Alert.alert("Security Check", "Please log out and back in to verify your identity before deleting.");
+              } else {
+                Alert.alert("Error", "Could not complete deletion. Please try again.");
+              }
             }
           } 
         }
@@ -113,7 +132,6 @@ const SettingScreen = ({ navigation }: any) => {
               <View style={styles.iconWrapper}><User color={COLORS.softPurple} size={20} /></View>
               <Text style={styles.sectionTitle}>Profile Details</Text>
             </View>
-
             <Text style={styles.label}>New Username</Text>
             <TextInput
               style={styles.input}
@@ -123,7 +141,6 @@ const SettingScreen = ({ navigation }: any) => {
               placeholderTextColor="#AAA"
               maxLength={20}
             />
-
             <TouchableOpacity style={styles.primaryBtn} onPress={handleUpdateProfile}>
               <Save color={COLORS.white} size={18} />
               <Text style={styles.btnText}>Save Changes</Text>
