@@ -7,6 +7,8 @@ import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { AuthNavigator } from './src/navigation/AuthNavigator';
 import TabNavigator from './src/navigation/TabNavigator';
 import PickAGenreScreen from './src/screens/PickAGenreScreen';
+import GenreDetailScreen from './src/screens/GenreDetailScreen';
+
 
 const RootStack = createNativeStackNavigator();
 
@@ -46,28 +48,39 @@ const App = () => {
     <NavigationContainer>
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
-          // If the user is logged in but has no displayName, they stay in Onboarding
-          !user.displayName ? (
-            <RootStack.Screen 
-              name="Onboarding" 
-              component={PickAGenreScreen} 
-              key="onboarding-screen"
-            />
-          ) : (
-            // Once displayName is set, they are moved to the main App
-            <RootStack.Screen 
-              name="AppTabs" 
-              component={TabNavigator} 
-              key="main-app-tabs"
-            />
-          )
-        ) : (
-          <RootStack.Screen 
-            name="Auth" 
-            component={AuthNavigator} 
-            key="auth-stack"
-          />
-        )}
+  !user.displayName ? (
+    <RootStack.Screen 
+      name="Onboarding" 
+      component={PickAGenreScreen} 
+      key="onboarding-screen"
+    />
+  ) : (
+    // We use a React Fragment <> to group the main screens together
+    <>
+      <RootStack.Screen 
+        name="AppTabs" 
+        component={TabNavigator} 
+        key="main-app-tabs"
+      />
+      {/* ADD THIS HERE: Now the Home screen can "see" the GenreDetail screen */}
+      <RootStack.Screen 
+        name="GenreDetail" 
+        component={GenreDetailScreen} 
+        options={{ 
+          headerShown: true, 
+          title: 'Explore' 
+        }} 
+        key="genre-detail-screen"
+      />
+    </>
+  )
+) : (
+  <RootStack.Screen 
+    name="Auth" 
+    component={AuthNavigator} 
+    key="auth-stack"
+  />
+)}
       </RootStack.Navigator>
     </NavigationContainer>
   );
