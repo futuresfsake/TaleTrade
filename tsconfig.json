@@ -3,6 +3,6 @@
   "compilerOptions": {
     "types": ["jest"]
   },
-  "include": ["**/*.ts", "**/*.tsx"],
+  "include": ["**/*.ts", "**/*.tsx", "env.d.ts"], //* tells the ts compiler, treat the definitions in this file as the global truths
   "exclude": ["**/node_modules", "**/Pods"]
 }

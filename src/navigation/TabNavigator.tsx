@@ -9,6 +9,42 @@ import ProfileScreen from '../screens/ProfileScreen';
 import SearchScreen from '../screens/SearchScreen';
 import SettingScreen from '../screens/SettingScreen';
 
+import GenreDetailScreen from '../screens/GenreDetailScreen';
+import BookDetailScreen from '../screens/BookDetailScreen';
+
+const MainStack = createNativeStackNavigator();
+
+export const MainNavigator = () => {
+  return (
+    <MainStack.Navigator screenOptions={{ headerShown: false }}>
+      {/* 1. The Tabs (Home, Search, Profile) are treated as one screen here */}
+      <MainStack.Screen name="MainTabs" component={TabNavigator} />
+      
+      {/* 2. GenreDetail is outside the Tabs so it covers the whole screen */}
+      <MainStack.Screen 
+        name="GenreDetail" 
+        component={GenreDetailScreen} 
+        options={{ 
+          headerShown: true, 
+          title: 'Explore Genre',
+          headerBackTitle: 'Back' 
+        }} 
+      />
+
+      <MainStack.Screen 
+        name="BookDetail" 
+        component={BookDetailScreen} 
+        options={{ 
+          headerShown: true, 
+          title: 'Book Details',
+          headerTintColor: '#6C63FF' // Theme matching purple
+        }} 
+      />
+
+      
+    </MainStack.Navigator>
+  );
+};
 // 1. Create a Stack Navigator specifically for the Profile section
 const ProfileStack = createNativeStackNavigator();
 

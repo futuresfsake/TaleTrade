@@ -84,3 +84,8 @@ android/app/google-services.json
 #firebase keys
 
 src/api/private.ts
+
+
+#ks
+.env
+env.d.ts
