@@ -4,11 +4,12 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth'; 
 
+// Navigators & Screens
 import { AuthNavigator } from './src/navigation/AuthNavigator';
 import TabNavigator from './src/navigation/TabNavigator';
 import PickAGenreScreen from './src/screens/PickAGenreScreen';
 import GenreDetailScreen from './src/screens/GenreDetailScreen';
-
+import BookDetailScreen from './src/screens/BookDetailScreen'; // Fixed path from 'scr' to 'src'
 
 const RootStack = createNativeStackNavigator();
 
@@ -23,11 +24,9 @@ const App = () => {
       if (initializing) setInitializing(false);
     });
 
-    // Listener 2: Handles Profile Updates (Crucial for the Genre -> Home switch)
+    // Listener 2: Handles Profile Updates
     const userSubscriber = auth().onUserChanged((userState) => {
-      if (userState) {
-        setUser(userState);
-      }
+      if (userState) setUser(userState);
     });
 
     return () => {
@@ -48,48 +47,63 @@ const App = () => {
     <NavigationContainer>
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
-  !user.displayName ? (
-    <RootStack.Screen 
-      name="Onboarding" 
-      component={PickAGenreScreen} 
-      key="onboarding-screen"
-    />
-  ) : (
-    // We use a React Fragment <> to group the main screens together
-    <>
-      <RootStack.Screen 
-        name="AppTabs" 
-        component={TabNavigator} 
-        key="main-app-tabs"
-      />
-      {/* ADD THIS HERE: Now the Home screen can "see" the GenreDetail screen */}
-      <RootStack.Screen 
-        name="GenreDetail" 
-        component={GenreDetailScreen} 
-        options={{ 
-          headerShown: true, 
-          title: 'Explore' 
-        }} 
-        key="genre-detail-screen"
-      />
-    </>
-  )
-) : (
-  <RootStack.Screen 
-    name="Auth" 
-    component={AuthNavigator} 
-    key="auth-stack"
-  />
-)}
+          !user.displayName ? (
+            /* CASE: User is logged in but hasn't picked a genre/name yet */
+            <RootStack.Screen 
+              name="Onboarding" 
+              component={PickAGenreScreen} 
+              key="onboarding-screen"
+            />
+          ) : (
+            /* CASE: Returning User - Main App Flow */
+            <>
+              <RootStack.Screen 
+                name="AppTabs" 
+                component={TabNavigator} 
+                key="main-app-tabs"
+              />
+              
+              {/* Full-screen stack pages accessible from Home or Search */}
+              <RootStack.Screen 
+                name="GenreDetail" 
+                component={GenreDetailScreen} 
+                options={{ 
+                    headerShown: true, 
+                    title: 'Explore',
+                    headerTintColor: '#6C63FF' 
+                }} 
+                key="genre-detail-screen"
+              />
+
+              <RootStack.Screen 
+                name="BookDetail" 
+                component={BookDetailScreen} 
+                options={{ 
+                  headerShown: true, 
+                  title: 'Book Details',
+                  headerTintColor: '#6C63FF' 
+                }} 
+                key="book-detail-screen"
+              />
+            </>
+          )
+        ) : (
+          /* CASE: Not Logged In */
+          <RootStack.Screen 
+            name="Auth" 
+            component={AuthNavigator} 
+            key="auth-stack"
+          />
+        )}
       </RootStack.Navigator>
     </NavigationContainer>
   );
-};
+}; // This closing brace was missing!
 
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1, 
-    backgroundColor: '#F5E9CF', 
+    backgroundColor: '#ad9154', 
     justifyContent: 'center', 
     alignItems: 'center'
   }

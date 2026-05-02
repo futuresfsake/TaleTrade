@@ -10,7 +10,7 @@ import SearchScreen from '../screens/SearchScreen';
 import SettingScreen from '../screens/SettingScreen';
 
 import GenreDetailScreen from '../screens/GenreDetailScreen';
-
+import BookDetailScreen from '../screens/BookDetailScreen';
 
 const MainStack = createNativeStackNavigator();
 
@@ -30,6 +30,18 @@ export const MainNavigator = () => {
           headerBackTitle: 'Back' 
         }} 
       />
+
+      <MainStack.Screen 
+        name="BookDetail" 
+        component={BookDetailScreen} 
+        options={{ 
+          headerShown: true, 
+          title: 'Book Details',
+          headerTintColor: '#6C63FF' // Theme matching purple
+        }} 
+      />
+
+      
     </MainStack.Navigator>
   );
 };
