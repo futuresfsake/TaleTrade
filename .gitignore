@@ -85,5 +85,7 @@ android/app/google-services.json
 
 src/api/private.ts
 
+
+#ks
 .env
 env.d.ts
