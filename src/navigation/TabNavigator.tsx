@@ -8,6 +8,8 @@ import HomeScreen from '../screens/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import SearchScreen from '../screens/SearchScreen';
 import SettingScreen from '../screens/SettingScreen';
+import WishlistScreen from '../screens/WishlistScreen';
+import MyBooksScreen from '../screens/MyBooksScreen';
 
 import GenreDetailScreen from '../screens/GenreDetailScreen';
 import BookDetailScreen from '../screens/BookDetailScreen';
@@ -70,6 +72,8 @@ const TabNavigator = () => {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Search" component={SearchScreen} />
+      <Tab.Screen name="My Books" component={MyBooksScreen} />
+      <Tab.Screen name="Wishlist" component={WishlistScreen} />
       <Tab.Screen name="Profile" component={ProfileStackScreen} />
     </Tab.Navigator>
   );

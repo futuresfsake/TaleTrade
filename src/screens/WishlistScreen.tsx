@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-const SearchScreen = () => {
+const WishlistScreen = () => {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Welcome to the Search Screen!</Text>
+      <Text style={styles.text}>Welcome to the Wishlist Screen!</Text>
     </View>
   );
 };
@@ -14,4 +14,4 @@ const styles = StyleSheet.create({
   text: { fontSize: 22, fontWeight: 'bold' }
 });
 
-export default SearchScreen;
+export default WishlistScreen;

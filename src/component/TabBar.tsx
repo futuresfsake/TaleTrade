@@ -7,12 +7,12 @@ import {
   Dimensions,
   Platform,
 } from 'react-native';
-import { Home, Search, User } from 'lucide-react-native';
+// Added Star and Book to the imports
+import { Home, Search, User, Star, Book } from 'lucide-react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
 const { width } = Dimensions.get('window');
 
-// Colors from your palette
 const COLORS = {
   primaryBlue: '#4A68BE',
   softPurple: '#7E6FB0',
@@ -27,7 +27,6 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
 
-          // Determine the label
           const label = options.tabBarLabel !== undefined
             ? options.tabBarLabel
             : options.title !== undefined
@@ -48,7 +47,6 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
             }
           };
 
-          // Icon Logic - Matching your TabNavigator screen names
           const renderIcon = (color: string) => {
             const iconProps = {
               color,
@@ -56,11 +54,16 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
               strokeWidth: isFocused ? 2.5 : 2
             };
 
+            // Updated switch cases to match your TabNavigator.tsx names
             switch (route.name) {
               case 'Home':
                 return <Home {...iconProps} />;
-              case 'Search': // Matches the name in your TabNavigator.tsx
+              case 'Search':
                 return <Search {...iconProps} />;
+              case 'My Books':
+                return <Book {...iconProps} />;
+              case 'Wishlist':
+                return <Star {...iconProps} />;
               case 'Profile':
                 return <User {...iconProps} />;
               default:
@@ -95,10 +98,11 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
   );
 };
 
+// Styles remain the same
 const styles = StyleSheet.create({
   wrapper: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 34 : 20, // Adjusted for safe areas
+    bottom: Platform.OS === 'ios' ? 34 : 20,
     width: width,
     alignItems: 'center',
     justifyContent: 'center',
@@ -107,13 +111,12 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     backgroundColor: COLORS.creamBg,
-    width: width * 0.88, // Slightly slimmer for a cleaner look
+    width: width * 0.92, // Increased width slightly to accommodate 5 icons better
     paddingVertical: 10,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     borderRadius: 35,
-    justifyContent: 'space-between', // Spaces items evenly
+    justifyContent: 'space-around', // Changed to space-around for even spacing with 5 items
     alignItems: 'center',
-    // Cutesy shadow
     shadowColor: COLORS.softPurple,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
@@ -125,12 +128,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     height: 45,
-    paddingHorizontal: 15,
+    paddingHorizontal: 12, // Slightly reduced padding for horizontal fit
     borderRadius: 25,
   },
   activeTabItem: {
     backgroundColor: COLORS.white,
-    // Soft inner-glow style shadow for the pill
     shadowColor: COLORS.primaryBlue,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -138,8 +140,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   label: {
-    marginLeft: 8,
-    fontSize: 13,
+    marginLeft: 6,
+    fontSize: 12, // Slightly smaller font to ensure labels fit on smaller screens
     fontWeight: '700',
     color: COLORS.primaryBlue,
   },
