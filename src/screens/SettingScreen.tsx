@@ -5,10 +5,14 @@ import {
   Platform, StatusBar as RNStatusBar, Image,
   Linking, PermissionsAndroid 
 } from 'react-native';
-import { ChevronLeft, User, Lock, Trash2, Save, Camera, CheckCircle } from 'lucide-react-native';
+import { ChevronLeft, User, Trash2, Save, Camera, CheckCircle, AlignLeft, LogOut } from 'lucide-react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+<<<<<<< HEAD
 import { updateUserInDb } from '../services/userService';
+=======
+import { updateUserInDb, getUserProfile, updateUserBio } from '../services/userService';
+>>>>>>> f9c6e9e (feature: status)
 import { launchImageLibrary } from 'react-native-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -25,23 +29,27 @@ const COLORS = {
 
 const SettingScreen = ({ navigation }: any) => {
   const [newName, setNewName] = useState('');
-  const [newPassword, setNewPassword] = useState('');
+  const [newBio, setNewBio] = useState('');
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [tempImage, setTempImage] = useState<string | null>(null);
 
   useEffect(() => {
-    loadStoredImage();
+    loadUserData();
   }, []);
 
-  const loadStoredImage = async () => {
-    try {
-      const savedImage = await AsyncStorage.getItem('user_profile_image');
-      if (savedImage) {
-        setProfileImage(savedImage);
-        setTempImage(savedImage);
+  const loadUserData = async () => {
+    const user = auth().currentUser;
+    if (user) {
+      const userData = await getUserProfile(user.uid);
+      if (userData) {
+        setNewName(userData.username || '');
+        setNewBio(userData.bio || '');
       }
-    } catch (e) {
-      console.error("Failed to load image", e);
+    }
+    const savedImage = await AsyncStorage.getItem('user_profile_image');
+    if (savedImage) {
+      setProfileImage(savedImage);
+      setTempImage(savedImage);
     }
   };
 
