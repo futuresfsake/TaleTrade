@@ -1,21 +1,38 @@
 import firestore from '@react-native-firebase/firestore';
 
 /**
- * Fetches the username from the 'Users' collection.
- * Note: Ensure the Document ID is the user's UID.
+ * Fetches the full user profile from the 'Users' collection.
  */
-export const getUsername = async (uid: string) => {
+export const getUserProfile = async (uid: string) => {
   try {
     const doc = await firestore().collection('Users').doc(uid).get();
-    return doc.exists() ? doc.data()?.username : null;
+    return doc.exists() ? doc.data() : null;
   } catch (error) {
-    console.error("Error fetching username:", error);
+    console.error("Error fetching user profile:", error);
     return null;
   }
 };
 
 /**
- * Updates or creates the user document in the 'Users' collection.
+ * Specifically updates the user's status string.
+ */
+export const updateUserStatus = async (uid: string, status: string) => {
+  try {
+    return await firestore()
+      .collection('Users')
+      .doc(uid)
+      .set({
+        status: status,
+        lastUpdated: firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+  } catch (error) {
+    console.error("Error updating status:", error);
+    throw error;
+  }
+};
+
+/**
+ * Updates or creates the user document (existing logic).
  */
 export const updateUserInDb = async (uid: string, username: string) => {
   return await firestore()
