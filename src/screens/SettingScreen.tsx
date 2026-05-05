@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, TextInput, TouchableOpacity, 
   SafeAreaView, Alert, ScrollView, KeyboardAvoidingView, 
-  Platform, StatusBar as RNStatusBar 
+  Platform, StatusBar as RNStatusBar, Image,
+  Linking, PermissionsAndroid 
 } from 'react-native';
-import { ChevronLeft, User, Lock, Trash2, Save } from 'lucide-react-native';
+import { ChevronLeft, User, Lock, Trash2, Save, Camera, CheckCircle } from 'lucide-react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { updateUserInDb } from '../services/userService';
+import { launchImageLibrary, ImageLibraryOptions } from 'react-native-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const COLORS = {
   primaryBlue: '#4A68BE',
@@ -15,28 +18,103 @@ const COLORS = {
   creamBg: '#F5E9CF',
   white: '#FFFFFF',
   danger: '#FF6B6B',
-  inputBg: '#F9F7F2'
+  inputBg: '#F9F7F2',
+  success: '#4CAF50'
 };
 
 const SettingScreen = ({ navigation }: any) => {
   const [newName, setNewName] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [tempImage, setTempImage] = useState<string | null>(null); // To store un-saved selection
+
+  useEffect(() => {
+    loadStoredImage();
+  }, []);
+
+  const loadStoredImage = async () => {
+    try {
+      const savedImage = await AsyncStorage.getItem('user_profile_image');
+      if (savedImage) {
+        setProfileImage(savedImage);
+        setTempImage(savedImage);
+      }
+    } catch (e) {
+      console.error("Failed to load image", e);
+    }
+  };
+
+  const requestGalleryPermission = async () => {
+    if (Platform.OS === 'ios') return true;
+    if (Platform.OS === 'android') {
+      try {
+        if (Platform.Version >= 33) {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES
+          );
+          return granted === PermissionsAndroid.RESULTS.GRANTED;
+        } else {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE
+          );
+          return granted === PermissionsAndroid.RESULTS.GRANTED;
+        }
+      } catch (err) {
+        return false;
+      }
+    }
+    return false;
+  };
+
+  const handlePickImage = async () => {
+    const hasPermission = await requestGalleryPermission();
+
+    if (!hasPermission) {
+      Alert.alert(
+        "Permission Denied",
+        "Enable gallery access in settings to change your photo.",
+        [{ text: "Cancel", style: "cancel" }, { text: "Open Settings", onPress: () => Linking.openSettings() }]
+      );
+      return;
+    }
+
+    try {
+      launchImageLibrary({ 
+        mediaType: 'photo', 
+        quality: 0.7,
+        selectionLimit: 1 
+      }, async (response) => {
+        if (response.didCancel) return;
+        if (response.assets && response.assets[0].uri) {
+          setTempImage(response.assets[0].uri); // Preview the image first
+        }
+      });
+    } catch (error) {
+      Alert.alert("App Error", "Image Picker module not found.");
+    }
+  };
+
+  // NEW: Save Image Function
+  const handleSavePhoto = async () => {
+    try {
+      if (tempImage) {
+        await AsyncStorage.setItem('user_profile_image', tempImage);
+        setProfileImage(tempImage);
+        Alert.alert("Success! ✨", "Your profile picture has been updated.");
+      }
+    } catch (error) {
+      Alert.alert("Error ❌", "Failed to save your profile picture. Please try again.");
+    }
+  };
 
   const handleUpdateProfile = async () => {
     const user = auth().currentUser;
     if (!user) return;
-
     const trimmedName = newName.trim();
     if (trimmedName.length < 3) {
       Alert.alert("Too Short", "Username must be at least 3 characters long! ✨");
       return;
     }
-    const nameRegex = /^[a-zA-Z0-9 ]+$/;
-    if (!nameRegex.test(trimmedName)) {
-      Alert.alert("Invalid Characters", "Use letters and numbers only! 🛡️");
-      return;
-    }
-
     try {
       await user.updateProfile({ displayName: trimmedName });
       await updateUserInDb(user.uid, trimmedName);
@@ -54,7 +132,6 @@ const SettingScreen = ({ navigation }: any) => {
       Alert.alert("Oops", "Password must be at least 6 characters! 🔑");
       return;
     }
-
     try {
       await user.updatePassword(newPassword);
       Alert.alert("Success", "Password updated safely!", [
@@ -69,49 +146,17 @@ const SettingScreen = ({ navigation }: any) => {
   const handleDeleteAccount = () => {
     const user = auth().currentUser;
     if (!user) return;
-
-    Alert.alert(
-      "Wait! 🥺",
-      "Delete everything? Your tales will be lost forever.",
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Delete Account", 
-          style: "destructive", 
-          onPress: async () => {
-            try {
-              const uid = user.uid;
-              
-              // 1. Delete Firestore data FIRST while user is still authenticated
-              await firestore().collection('Users').doc(uid).delete();
-              
-              // 2. Delete the Auth account
-              await user.delete();
-
-              // 3. Success Alert (Show this BEFORE signing out/navigating)
-              Alert.alert("Account Deleted", "Your account has been permanently removed. 👋");
-              
-              // 4. Explicitly sign out to clean up local cache
-              await auth().signOut();
-              
-            } catch (error: any) {
-              // Check if the error happened BECAUSE the user was already deleted 
-              // (which means it actually succeeded)
-              if (!auth().currentUser) {
-                Alert.alert("Account Deleted", "Your account has been removed. 👋");
-                return;
-              }
-
-              if (error.code === 'auth/requires-recent-login') {
-                Alert.alert("Security Check", "Please log out and back in to verify your identity before deleting.");
-              } else {
-                Alert.alert("Error", "Could not complete deletion. Please try again.");
-              }
-            }
-          } 
-        }
-      ]
-    );
+    Alert.alert("Wait! 🥺", "Delete everything?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete Account", style: "destructive", onPress: async () => {
+        try {
+          await firestore().collection('Users').doc(user.uid).delete();
+          await AsyncStorage.removeItem('user_profile_image');
+          await user.delete();
+          await auth().signOut();
+        } catch (e) { Alert.alert("Error", "Could not delete"); }
+      }}
+    ]);
   };
 
   return (
@@ -127,6 +172,39 @@ const SettingScreen = ({ navigation }: any) => {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           
+          {/* PHOTO SECTION */}
+          <View style={styles.sectionCard}>
+             <View style={styles.sectionHeader}>
+                <View style={styles.iconWrapper}><Camera color={COLORS.softPurple} size={20} /></View>
+                <Text style={styles.sectionTitle}>Profile Picture</Text>
+             </View>
+             <View style={styles.imagePickerContainer}>
+                <View style={styles.imageWrapper}>
+                  {tempImage ? (
+                    <Image source={{ uri: tempImage }} style={styles.previewImage} />
+                  ) : (
+                    <View style={[styles.previewImage, styles.placeholderImage]}>
+                        <User color={COLORS.softPurple} size={40} />
+                    </View>
+                  )}
+                </View>
+                
+                <View style={styles.buttonRow}>
+                  <TouchableOpacity style={styles.imagePickerBtn} onPress={handlePickImage}>
+                     <Text style={styles.imagePickerBtnText}>Change Photo</Text>
+                  </TouchableOpacity>
+
+                  {/* Show Save button only if the preview image differs from the saved image */}
+                  {tempImage !== profileImage && (
+                    <TouchableOpacity style={styles.savePhotoBtn} onPress={handleSavePhoto}>
+                       <CheckCircle color={COLORS.white} size={16} />
+                       <Text style={styles.savePhotoBtnText}>Save</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+             </View>
+          </View>
+
           <View style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
               <View style={styles.iconWrapper}><User color={COLORS.softPurple} size={20} /></View>
@@ -196,6 +274,15 @@ const styles = StyleSheet.create({
   btnText: { color: COLORS.white, fontWeight: '800', fontSize: 16 },
   deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 20, borderRadius: 25, borderWidth: 2, borderColor: COLORS.danger, borderStyle: 'dashed', gap: 10, marginTop: 10, opacity: 0.8 },
   deleteBtnText: { color: COLORS.danger, fontWeight: '800', fontSize: 16 },
+  imagePickerContainer: { alignItems: 'center' },
+  imageWrapper: { width: 110, height: 110, borderRadius: 55, overflow: 'hidden', backgroundColor: COLORS.inputBg, marginBottom: 15, borderWidth: 3, borderColor: '#F3F1FB' },
+  previewImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  placeholderImage: { justifyContent: 'center', alignItems: 'center' },
+  buttonRow: { flexDirection: 'row', gap: 10 },
+  imagePickerBtn: { paddingVertical: 10, paddingHorizontal: 18, borderRadius: 12, backgroundColor: '#F3F1FB' },
+  imagePickerBtnText: { color: COLORS.primaryBlue, fontWeight: '700', fontSize: 14 },
+  savePhotoBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 18, borderRadius: 12, backgroundColor: COLORS.success },
+  savePhotoBtnText: { color: COLORS.white, fontWeight: '700', fontSize: 14 }
 });
 
 export default SettingScreen;
