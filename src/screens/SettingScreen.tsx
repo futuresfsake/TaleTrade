@@ -8,11 +8,7 @@ import {
 import { ChevronLeft, User, Trash2, Save, Camera, CheckCircle, AlignLeft, LogOut } from 'lucide-react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-<<<<<<< HEAD
 import { updateUserInDb } from '../services/userService';
-=======
-import { updateUserInDb, getUserProfile, updateUserBio } from '../services/userService';
->>>>>>> f9c6e9e (feature: status)
 import { launchImageLibrary } from 'react-native-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
