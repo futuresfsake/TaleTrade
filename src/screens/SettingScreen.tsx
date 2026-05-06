@@ -8,7 +8,7 @@ import {
 import { ChevronLeft, User, Trash2, Save, Camera, CheckCircle, AlignLeft, LogOut } from 'lucide-react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-import { updateUserInDb } from '../services/userService';
+import { updateUserInDb, getUserProfile, updateUserBio } from '../services/userService';
 import { launchImageLibrary } from 'react-native-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -66,10 +66,12 @@ const SettingScreen = ({ navigation }: any) => {
   const handlePickImage = async () => {
     const hasPermission = await requestGalleryPermission();
     if (!hasPermission) {
-      Alert.alert("Permission Denied", "Enable gallery access in settings.", 
-        [{ text: "Cancel" }, { text: "Settings", onPress: () => Linking.openSettings() }]);
+      Alert.alert("Permission Denied", "Open settings to allow gallery access.", 
+        [{ text: "Cancel" }, { text: "Open Settings", onPress: () => Linking.openSettings() }]
+      );
       return;
     }
+
     launchImageLibrary({ mediaType: 'photo', quality: 0.7 }, (response) => {
       if (response.assets && response.assets[0].uri) {
         setTempImage(response.assets[0].uri);
@@ -78,25 +80,56 @@ const SettingScreen = ({ navigation }: any) => {
   };
 
   const handleSavePhoto = async () => {
-    try {
-      if (tempImage) {
-        await AsyncStorage.setItem('user_profile_image', tempImage);
-        setProfileImage(tempImage);
-        Alert.alert("Success! ✨", "Profile picture updated.");
-      }
-    } catch (error) {
-      Alert.alert("Error ❌", "Failed to save picture.");
+    if (tempImage) {
+      await AsyncStorage.setItem('user_profile_image', tempImage);
+      setProfileImage(tempImage);
+      Alert.alert("Success! ✨", "Profile picture updated.");
     }
   };
 
   const handleUpdateProfile = async () => {
     const user = auth().currentUser;
-    if (!user || newName.trim().length < 3) return;
+    if (!user) return;
+    
+    if (newName.trim().length < 3) {
+      Alert.alert("Error", "Username is too short!");
+      return;
+    }
+
     try {
-      await user.updateProfile({ displayName: newName.trim() });
       await updateUserInDb(user.uid, newName.trim());
-      Alert.alert("Success!", "Name updated ✨");
-    } catch (error: any) { Alert.alert("Error", error.message); }
+      await updateUserBio(user.uid, newBio.trim());
+      
+      Alert.alert("Success!", "Profile updated ✨", [
+        { text: "OK", onPress: () => navigation.goBack() }
+      ]);
+    } catch (error: any) {
+      Alert.alert("Error", error.message);
+    }
+  };
+
+  const handleLogout = () => {
+    Alert.alert("Log Out", "Are you sure? 🥺", [
+      { text: "Stay", style: "cancel" },
+      { text: "Log Out", style: "destructive", onPress: () => auth().signOut() }
+    ]);
+  };
+
+  const handleDeleteAccount = () => {
+    const user = auth().currentUser;
+    if (!user) return;
+    Alert.alert("Wait! 🥺", "This will delete your account permanently. Proceed?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete Everything", style: "destructive", onPress: async () => {
+        try {
+          await firestore().collection('Users').doc(user.uid).delete();
+          await AsyncStorage.removeItem('user_profile_image');
+          await user.delete();
+        } catch (e) { 
+          Alert.alert("Security Check", "Please log out and log back in before deleting."); 
+        }
+      }}
+    ]);
   };
 
   return (
@@ -112,73 +145,81 @@ const SettingScreen = ({ navigation }: any) => {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           
-          {/* COHESIVE TOP SECTION: AVATAR */}
-          <View style={styles.avatarSection}>
-            <View style={styles.imageWrapper}>
-              {tempImage ? (
-                <Image source={{ uri: tempImage }} style={styles.previewImage} />
-              ) : (
-                <View style={styles.placeholderImage}><User color={COLORS.softPurple} size={50} /></View>
-              )}
-              <TouchableOpacity style={styles.cameraBadge} onPress={handlePickImage}>
-                <Camera color={COLORS.white} size={18} />
-              </TouchableOpacity>
+          {/* PHOTO SECTION */}
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.iconWrapper}><Camera color={COLORS.softPurple} size={20} /></View>
+              <Text style={styles.sectionTitle}>Profile Picture</Text>
             </View>
-            
-            {tempImage !== profileImage && (
-              <TouchableOpacity style={styles.saveBadge} onPress={handleSavePhoto}>
-                 <CheckCircle color={COLORS.white} size={14} />
-                 <Text style={styles.saveBadgeText}>Save Photo</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* MAIN UNIFIED SETTINGS CARD */}
-          <View style={styles.unifiedCard}>
-            
-            {/* Section 1: Name */}
-            <View style={styles.rowItem}>
-              <View style={styles.rowIcon}><User color={COLORS.softPurple} size={20} /></View>
-              <View style={styles.rowContent}>
-                <Text style={styles.rowLabel}>Username</Text>
-                <TextInput
-                  style={styles.rowInput}
-                  value={newName}
-                  onChangeText={setNewName}
-                  placeholder="Enter username"
-                  placeholderTextColor="#AAA"
-                />
+            <View style={styles.imagePickerContainer}>
+              <View style={styles.imageWrapper}>
+                {tempImage ? (
+                  <Image source={{ uri: tempImage }} style={styles.previewImage} />
+                ) : (
+                  <View style={[styles.previewImage, styles.placeholderImage]}>
+                    <User color={COLORS.softPurple} size={40} />
+                  </View>
+                )}
               </View>
-              <TouchableOpacity onPress={handleUpdateProfile} style={styles.rowAction}>
-                <Save color={COLORS.primaryBlue} size={20} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.divider} />
-
-            {/* Section 2: Password */}
-            <View style={styles.rowItem}>
-              <View style={styles.rowIcon}><Lock color={COLORS.softPurple} size={20} /></View>
-              <View style={styles.rowContent}>
-                <Text style={styles.rowLabel}>New Password</Text>
-                <TextInput
-                  style={styles.rowInput}
-                  value={newPassword}
-                  onChangeText={setNewPassword}
-                  placeholder="••••••••"
-                  secureTextEntry
-                  placeholderTextColor="#AAA"
-                />
+              <View style={styles.buttonRow}>
+                <TouchableOpacity style={styles.imagePickerBtn} onPress={handlePickImage}>
+                  <Text style={styles.imagePickerBtnText}>Change Photo</Text>
+                </TouchableOpacity>
+                {tempImage !== profileImage && (
+                  <TouchableOpacity style={styles.savePhotoBtn} onPress={handleSavePhoto}>
+                    <CheckCircle color={COLORS.white} size={16} />
+                    <Text style={styles.savePhotoBtnText}>Save</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
-
           </View>
 
-          {/* DANGER AREA (Kept separate for visual caution) */}
-          <TouchableOpacity style={styles.deleteBtn} onPress={() => {}}>
-            <Trash2 color={COLORS.danger} size={18} />
-            <Text style={styles.deleteBtnText}>Delete My Account</Text>
-          </TouchableOpacity>
+          {/* BIO & NAME SECTION */}
+          <View style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.iconWrapper}><AlignLeft color={COLORS.softPurple} size={20} /></View>
+              <Text style={styles.sectionTitle}>Public Bio</Text>
+            </View>
+            
+            <Text style={styles.label}>Username</Text>
+            <TextInput
+              style={styles.input}
+              value={newName}
+              onChangeText={setNewName}
+              placeholder="Your display name"
+              placeholderTextColor="#AAA"
+            />
+
+            <Text style={styles.label}>About Me</Text>
+            <TextInput
+              style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
+              value={newBio}
+              onChangeText={setNewBio}
+              placeholder="Tell us about your favorite books..."
+              placeholderTextColor="#AAA"
+              multiline
+              numberOfLines={4}
+            />
+
+            <TouchableOpacity style={styles.primaryBtn} onPress={handleUpdateProfile}>
+              <Save color={COLORS.white} size={18} />
+              <Text style={styles.btnText}>Save Profile</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* DANGER COLUMN: Vertically stacked buttons */}
+          <View style={styles.dangerColumn}>
+            <TouchableOpacity style={[styles.dangerBtn, styles.logoutBtn]} onPress={handleLogout}>
+              <LogOut color={COLORS.danger} size={18} />
+              <Text style={styles.dangerBtnText}>Log Out of Account</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.dangerBtn, styles.deleteBtn]} onPress={handleDeleteAccount}>
+              <Trash2 color={COLORS.danger} size={18} />
+              <Text style={styles.dangerBtnText}>Permanently Delete Account</Text>
+            </TouchableOpacity>
+          </View>
 
         </ScrollView>
       </KeyboardAvoidingView>
@@ -193,46 +234,63 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     justifyContent: 'space-between', 
     paddingHorizontal: 20, 
-    paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight || 0) + 10 : 10, 
-    paddingBottom: 20 
+    paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight || 0) + 15 : 10, 
+    paddingBottom: 15 
   },
-  backCircle: { backgroundColor: COLORS.white, width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center', elevation: 2 },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: COLORS.primaryBlue },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 100 },
+  backCircle: { 
+    backgroundColor: COLORS.white, 
+    width: 45, height: 45, 
+    borderRadius: 22.5, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    elevation: 4 
+  },
+  headerTitle: { fontSize: 24, fontWeight: '900', color: COLORS.primaryBlue },
+  scrollContent: { padding: 25, paddingBottom: 120 },
+  sectionCard: { backgroundColor: COLORS.white, borderRadius: 30, padding: 20, marginBottom: 25, elevation: 4 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  iconWrapper: { width: 36, height: 36, borderRadius: 12, backgroundColor: '#F3F1FB', justifyContent: 'center', alignItems: 'center' },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: COLORS.primaryBlue, marginLeft: 12 },
+  label: { fontSize: 13, fontWeight: '700', color: COLORS.softPurple, marginBottom: 8 },
+  input: { backgroundColor: COLORS.inputBg, padding: 15, borderRadius: 18, fontSize: 16, color: '#444', marginBottom: 15 },
+  primaryBtn: { flexDirection: 'row', backgroundColor: COLORS.primaryBlue, padding: 16, borderRadius: 20, alignItems: 'center', justifyContent: 'center', gap: 8 },
+  btnText: { color: COLORS.white, fontWeight: '800', fontSize: 16 },
+  imagePickerContainer: { alignItems: 'center' },
+  imageWrapper: { width: 110, height: 110, borderRadius: 55, overflow: 'hidden', backgroundColor: COLORS.inputBg, marginBottom: 15, borderWidth: 3, borderColor: '#F3F1FB' },
+  previewImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  placeholderImage: { justifyContent: 'center', alignItems: 'center' },
+  buttonRow: { flexDirection: 'row', gap: 10 },
+  imagePickerBtn: { paddingVertical: 10, paddingHorizontal: 18, borderRadius: 12, backgroundColor: '#F3F1FB' },
+  imagePickerBtnText: { color: COLORS.primaryBlue, fontWeight: '700', fontSize: 14 },
+  savePhotoBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 18, borderRadius: 12, backgroundColor: COLORS.success },
+  savePhotoBtnText: { color: COLORS.white, fontWeight: '700', fontSize: 14 },
   
-  // Cohesive Avatar Style
-  avatarSection: { alignItems: 'center', marginTop: 10, marginBottom: 30 },
-  imageWrapper: { width: 120, height: 120, borderRadius: 60, backgroundColor: COLORS.white, elevation: 5, padding: 4 },
-  previewImage: { width: '100%', height: '100%', borderRadius: 60 },
-  placeholderImage: { width: '100%', height: '100%', borderRadius: 60, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F0F0F0' },
-  cameraBadge: { 
-    position: 'absolute', bottom: 0, right: 0, 
-    backgroundColor: COLORS.primaryBlue, width: 38, height: 38, 
-    borderRadius: 19, justifyContent: 'center', alignItems: 'center', 
-    borderWidth: 3, borderColor: COLORS.white 
+  // Danger Column Styles
+  dangerColumn: { 
+    marginTop: 10,
+    gap: 15, 
+    marginBottom: 30 
   },
-  saveBadge: { 
-    marginTop: 12, backgroundColor: COLORS.success, 
-    flexDirection: 'row', paddingHorizontal: 15, paddingVertical: 6, 
-    borderRadius: 20, alignItems: 'center', gap: 5 
+  dangerBtn: { 
+    width: '100%',
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    padding: 18, 
+    borderRadius: 22, 
+    borderWidth: 2, 
+    borderColor: COLORS.danger, 
+    gap: 10, 
   },
-  saveBadgeText: { color: COLORS.white, fontSize: 13, fontWeight: '700' },
-
-  // Unified Settings Card
-  unifiedCard: { backgroundColor: COLORS.white, borderRadius: 25, paddingVertical: 10, elevation: 3 },
-  rowItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15 },
-  rowIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#F8F7FF', justifyContent: 'center', alignItems: 'center' },
-  rowContent: { flex: 1, marginLeft: 15 },
-  rowLabel: { fontSize: 12, fontWeight: '700', color: COLORS.softPurple, textTransform: 'uppercase', marginBottom: 2 },
-  rowInput: { fontSize: 16, color: '#333', padding: 0, fontWeight: '600' },
-  rowAction: { padding: 5 },
-  divider: { height: 1, backgroundColor: COLORS.divider, marginHorizontal: 20 },
-
+  dangerBtnText: { color: COLORS.danger, fontWeight: '800', fontSize: 16 },
+  logoutBtn: { 
+    backgroundColor: 'rgba(255, 107, 107, 0.05)', 
+    borderStyle: 'solid' 
+  },
   deleteBtn: { 
-    marginTop: 30, flexDirection: 'row', alignItems: 'center', 
-    justifyContent: 'center', gap: 8, padding: 15 
+    borderStyle: 'dashed',
+    opacity: 0.6 
   },
-  deleteBtnText: { color: COLORS.danger, fontWeight: '700', fontSize: 15 },
 });
 
 export default SettingScreen;
