@@ -101,6 +101,10 @@ export const addToWishlist = async (bookData: any) => {
  * Pulls profile data (username/photo) from the CAPITALIZED 'Users'.
  */
 export const getBookOwners = async (bookId: string) => {
+  if (!bookId || typeof bookId !== 'string') {
+    console.log("getBookOwners blocked: Missing or invalid bookId string path coordinate.");
+    return [];
+  }
   const currentUserId = auth().currentUser?.uid;
 
   try {

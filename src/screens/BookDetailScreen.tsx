@@ -9,7 +9,6 @@ import {
   Alert, 
   ActivityIndicator 
 } from 'react-native';
-// 1. Import logic from your service layer
 import { 
   getBookOwners, 
   addBookToUserInventory, 
@@ -17,31 +16,46 @@ import {
 } from '../services/userbookService';
 
 const BookDetailScreen = ({ route }: any) => {
-  const { bookData } = route.params; 
+  // Enforce absolute fallback logic case so route missing parameters never crash the frame
+  const bookData = route?.params?.bookData; 
+
   const [owners, setOwners] = useState<any[]>([]);
   const [loadingAction, setLoadingAction] = useState(false);
 
-  // Reusable function to fetch owners
+  // Safely extract the raw nested container properties, falling back to an empty object
+  const bookId = bookData?.id;
+  const volumeInfo = bookData?.volumeInfo || {};
+  
+  // UNIFIED BLUEPRINT RESOLVER: Reads safely from volumeInfo (raw) OR top-level (cleaned)
+  const title = volumeInfo.title || bookData?.title || 'Untitled Book';
+  const description = volumeInfo.description || bookData?.description || 'No description available.';
+  const thumbnail = volumeInfo.imageLinks?.thumbnail || bookData?.thumbnail;
+  
+  // SURGICAL FIX: Enforce array type parsing checks before firing structural lookups
+  const rawAuthors = volumeInfo.authors || bookData?.authors;
+  const authorText = Array.isArray(rawAuthors) ? rawAuthors.join(', ') : 'Unknown Author';
+
   const fetchOwners = async () => {
+    if (!bookId) return;
     try {
-      const data = await getBookOwners(bookData.id);
+      const data = await getBookOwners(bookId);
       setOwners(data);
     } catch (err) {
-      console.log("Error fetching owners:", err);
+      console.log("Error fetching owners from Firestore:", err);
     }
   };
 
   useEffect(() => {
     fetchOwners();
-  }, [bookData.id]);
+  }, [bookId]);
 
-  // Handle "+ Own This"
   const handleAddBook = async () => {
+    if (!bookData) return;
     setLoadingAction(true);
     try {
       await addBookToUserInventory(bookData);
       Alert.alert("Success", "Book added to your inventory!");
-      await fetchOwners(); // Refresh the list to see "You" appear
+      await fetchOwners(); 
     } catch (error) {
       Alert.alert("Error", "Could not add book. Please try again.");
     } finally {
@@ -49,8 +63,8 @@ const BookDetailScreen = ({ route }: any) => {
     }
   };
 
-  // Handle "Wishlist"
   const handleWishlist = async () => {
+    if (!bookData) return;
     try {
       await addToWishlist(bookData);
       Alert.alert("Wishlist", "Added to your hearts!");
@@ -59,19 +73,33 @@ const BookDetailScreen = ({ route }: any) => {
     }
   };
 
+  // If data failed to migrate completely down the tab navigation chain
+  if (!bookData) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: '#333', fontWeight: 'bold' }}>No book context parameters detected.</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.container}>
-      {/* 1. Header Section */}
+      {/* Header Section */}
       <View style={styles.header}>
-        <Image 
-          source={{ uri: bookData.volumeInfo.imageLinks?.thumbnail }} 
-          style={styles.mainCover} 
-        />
-        <Text style={styles.title}>{bookData.volumeInfo.title}</Text>
-        <Text style={styles.author}>By {bookData.volumeInfo.authors?.join(', ') || 'Unknown'}</Text>
+        {thumbnail ? (
+          <Image source={{ uri: thumbnail }} style={styles.mainCover} />
+        ) : (
+          <View style={[styles.mainCover, styles.placeholderCover]}>
+            <Text style={styles.placeholderText}>No Cover</Text>
+          </View>
+        )}
+        <Text style={styles.title}>{title}</Text>
+        
+        {/* FIXED LINE 58: Enclosed fully in structural text layers using our safe computed variable */}
+        <Text style={styles.author}>By {authorText}</Text>
       </View>
 
-      {/* 2. Action Buttons */}
+      {/* Action Buttons */}
       <View style={styles.buttonRow}>
         <TouchableOpacity 
           style={[styles.ownButton, loadingAction && { opacity: 0.7 }]} 
@@ -90,15 +118,13 @@ const BookDetailScreen = ({ route }: any) => {
         </TouchableOpacity>
       </View>
 
-      {/* 3. Description Section */}
+      {/* Description Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About this book</Text>
-        <Text style={styles.description}>
-          {bookData.volumeInfo.description || "No description available."}
-        </Text>
+        <Text style={styles.description}>{description}</Text>
       </View>
 
-      {/* 4. Social Section (Dynamic Owners) */}
+      {/* Social Section (Dynamic Owners) */}
       <View style={styles.socialSection}>
         <Text style={styles.sectionTitle}>Users who own this book</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 10 }}>
@@ -115,7 +141,6 @@ const BookDetailScreen = ({ route }: any) => {
                   }
                 }}
               >
-                {/* Profile Container handles the "You" border highlight */}
                 <View style={[
                   styles.profileCircleContainer, 
                   item.isMe && { borderColor: '#6178b8', borderWidth: 3 } 
@@ -142,40 +167,22 @@ const BookDetailScreen = ({ route }: any) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5E9CF' },
   header: { alignItems: 'center', padding: 20 },
-  mainCover: { 
-    width: 200, 
-    height: 300, 
-    borderRadius: 15, 
-    elevation: 10, 
-    shadowColor: '#000', 
-    shadowOpacity: 0.3, 
-    shadowRadius: 10 
-  },
+  mainCover: { width: 200, height: 300, borderRadius: 15, elevation: 10, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 10, backgroundColor: '#e2e8f0' },
+  placeholderCover: { justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#cbd5e1', borderStyle: 'dashed' },
+  placeholderText: { color: '#94a3b8', fontWeight: 'bold' },
   title: { fontSize: 22, fontWeight: 'bold', marginTop: 15, textAlign: 'center', color: '#333' },
-  author: { fontSize: 16, color: '#6C63FF', marginTop: 5 },
+  author: { fontSize: 16, color: '#6C63FF', marginTop: 5, fontWeight: '600' },
   buttonRow: { flexDirection: 'row', justifyContent: 'space-around', marginVertical: 20 },
   ownButton: { backgroundColor: '#6C63FF', padding: 12, borderRadius: 25, width: '45%', alignItems: 'center' },
   wishButton: { backgroundColor: '#b84242', padding: 12, borderRadius: 25, width: '45%', alignItems: 'center' },
   btnText: { color: '#fff', fontWeight: 'bold' },
   section: { padding: 20 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#222' },
-  description: { color: '#666', lineHeight: 22, fontSize: 14 },
+  description: { color: '#666', lineHeight: 22, fontSize: 14, textAlign: 'justify' },
   socialSection: { padding: 20, borderTopWidth: 1, borderColor: '#eee', marginBottom: 30 },
   ownerCard: { alignItems: 'center', marginRight: 20 },
-  // Added container to allow borders around the profile circle
-  profileCircleContainer: {
-    borderRadius: 35,
-    padding: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  profileCircle: { 
-    width: 60, 
-    height: 60, 
-    borderRadius: 30, 
-    borderWidth: 2, 
-    borderColor: '#6C63FF' 
-  },
+  profileCircleContainer: { borderRadius: 35, padding: 2, justifyContent: 'center', alignItems: 'center' },
+  profileCircle: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: '#6C63FF' },
   ownerName: { fontSize: 12, marginTop: 5, color: '#555' },
   noOwners: { fontStyle: 'italic', color: '#999' }
 });
