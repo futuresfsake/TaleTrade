@@ -1,22 +1,24 @@
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 
-/**
- * Helper: Extract flat, display-ready fields from Google Books bookData
- */
 const extractBookFields = (bookData: any) => {
-  const v = bookData.volumeInfo || {};
+  // If volumeInfo exists, use it. If not, the object is already flat.
+  const v = bookData.volumeInfo || bookData; 
+  
   return {
-    bookId: bookData.id,
+    bookId: bookData.id || bookData.bookId,
     title: v.title || 'Untitled',
-    author: v.authors?.join(', ') || 'Unknown Author',
-    thumbnail: v.imageLinks?.thumbnail?.replace('http://', 'https://') || null,
+    // Handle authors as an array or a pre-joined string
+    author: Array.isArray(v.authors) 
+      ? v.authors.join(', ') 
+      : (v.author || 'Unknown Author'),
+    thumbnail: v.imageLinks?.thumbnail?.replace('http://', 'https://') || v.thumbnail || null,
     description: v.description || '',
     publisher: v.publisher || '',
     publishedDate: v.publishedDate || '',
     pageCount: v.pageCount || 0,
     categories: v.categories || [],
-    isbn: v.industryIdentifiers?.[0]?.identifier || '',
+    isbn: v.industryIdentifiers?.[0]?.identifier || v.isbn || '',
   };
 };
 
@@ -159,6 +161,10 @@ export const addToWishlist = async (bookData: any) => {
  * Profile data pulled from 'Users' (capital U) matching your authService.
  */
 export const getBookOwners = async (bookId: string) => {
+  if (!bookId || typeof bookId !== 'string') {
+    console.log("getBookOwners blocked: Missing or invalid bookId string path coordinate.");
+    return [];
+  }
   const currentUserId = auth().currentUser?.uid;
 
   try {
