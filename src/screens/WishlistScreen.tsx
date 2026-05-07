@@ -92,9 +92,9 @@ export default function WishlistScreen({ navigation }: any) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        {/* <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <ArrowLeft color="#4A68BE" size={24} />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <Text style={styles.title}>Wishlist</Text>
       </View>
 
