@@ -64,10 +64,12 @@ export const addBookToUserInventory = async (bookData: any) => {
 };
 
 /**
- * 2. READ: Fetch all books owned by the current user.
+ * 2. READ: Fetch all books owned by a specific user or the current user.
+ * Accepting an optional userId fixes the TS(2554) error.
  */
-export const getUserInventory = async () => {
-  const userId = auth().currentUser?.uid;
+export const getUserInventory = async (providedUserId?: string) => {
+  // Use the passed ID if it exists, otherwise fallback to the current authenticated user
+  const userId = providedUserId || auth().currentUser?.uid;
   if (!userId) return [];
 
   try {
