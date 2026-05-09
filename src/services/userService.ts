@@ -6,7 +6,13 @@ import firestore from '@react-native-firebase/firestore';
 export const getUserProfile = async (uid: string) => {
   try {
     const doc = await firestore().collection('Users').doc(uid).get();
-    return doc.exists() ? doc.data() : null;
+    if (doc.exists()) {
+      const data = doc.data();
+      // Console log here to verify the data actually contains socialLink
+      console.log("Fetched User Data for:", uid, data); 
+      return data;
+    }
+    return null;
   } catch (error) {
     console.error("Error fetching user profile:", error);
     return null;

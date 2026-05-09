@@ -132,7 +132,7 @@ const BookDetailScreen = ({ route, navigation }: any) => {
                 key={item.id} 
                 style={styles.ownerCard}
                 onPress={() => {
-                  navigation.navigate('UserProfileView', { userId: item.id });
+                  navigation.push('UserProfileView', { userId: item.id });
                 }}
               >
                 <View style={[
