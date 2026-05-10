@@ -73,23 +73,7 @@ const LoginScreen = ({ navigation }: any) => {
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
 
-      {/* DIVIDER */}
-      <View style={styles.dividerContainer}>
-        <View style={styles.line} />
-        <Text style={styles.orText}>or log in with</Text>
-        <View style={styles.line} />
-      </View>
-
-      {/* SOCIAL BUTTONS */}
-      <View style={styles.socialContainer}>
-        <TouchableOpacity style={styles.socialBtn}>
-          <Icon name="google" size={20} color="#DB4437" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.socialBtn}>
-          <Icon name="facebook" size={20} color="#1877F2" />
-        </TouchableOpacity>
-      </View>
+      
 
       {/* SIGNUP LINK */}
       <TouchableOpacity onPress={() => navigation.navigate('Register')}>
