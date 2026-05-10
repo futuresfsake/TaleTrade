@@ -143,22 +143,7 @@ const RegisterScreen = ({ navigation }: any) => {
             <Text style={styles.buttonText}>Sign Up</Text>
           </TouchableOpacity>
 
-          {/* DIVIDER */}
-          <View style={styles.dividerContainer}>
-            <View style={styles.line} />
-            <Text style={styles.orText}>or sign up with</Text>
-            <View style={styles.line} />
-          </View>
-
-          {/* SOCIAL BUTTONS */}
-          <View style={styles.socialContainer}>
-            <TouchableOpacity style={styles.socialBtn}>
-              <Icon name="google" size={25} color="#DB4437" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.socialBtn}>
-              <Icon name="facebook" size={25} color="#1877F2" />
-            </TouchableOpacity>
-          </View>
+          
 
           {/* LOGIN LINK */}
           <TouchableOpacity onPress={() => navigation.navigate('Login')}>
