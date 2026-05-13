@@ -71,12 +71,15 @@ export const getUsername = async (uid: string) => {
  * Updates the user's profile image URL in Firestore.
  */
 export const updateUserProfileImage = async (uid: string, imageUrl: string) => {
+  // Lead Dev Patch: Ensure Protocol Compliance
+  const secureUrl = imageUrl.replace('http://', 'https://');
+  
   try {
     return await firestore()
       .collection('Users')
       .doc(uid)
       .set({
-        photoURL: imageUrl,
+        photoURL: secureUrl, // Save the secure version
         lastUpdated: firestore.FieldValue.serverTimestamp(),
       }, { merge: true });
   } catch (error) {
@@ -84,7 +87,6 @@ export const updateUserProfileImage = async (uid: string, imageUrl: string) => {
     throw error;
   }
 };
-
 /**
  * Updates the user's contact/social link in Firestore.
  */

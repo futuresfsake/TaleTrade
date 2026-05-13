@@ -141,12 +141,23 @@ const BookDetailScreen = ({ route, navigation }: any) => {
                   styles.profileCircleContainer, 
                   item.isMe && { borderColor: '#4A68BE', borderWidth: 2 } 
                 ]}>
-                  {item.photo ? (
+                  {/* {item.photo ? (
                     <Image 
                       source={{ uri: item.photo }} 
                       style={styles.profileCircle} 
                     />
-                  ) : (
+                  ) : ( */}
+
+                  {item.photo ? (
+  <Image 
+    source={{ 
+      uri: item.photo.startsWith('http://') 
+        ? item.photo.replace('http://', 'https://') 
+        : item.photo 
+    }} 
+    style={styles.profileCircle} 
+  />
+) : (
                     <View style={[styles.profileCircle, styles.initialsContainer]}>
                       <Text style={styles.initialsText}>{getInitials(item.username || 'U')}</Text>
                     </View>

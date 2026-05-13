@@ -9,14 +9,42 @@ import { GOOGLE_BOOKS_API_KEY } from '@env';
 
 const BASE_URL = 'https://www.googleapis.com/books/v1/volumes';
 
-// src/services/googleBooksService.ts
+// // src/services/googleBooksService.ts
+// export const fetchBooksByGenre = async (genre: string, maxResults = 10) => {
+//   try {
+//     const response = await fetch(
+//       `${BASE_URL}?q=subject:${genre}&maxResults=${maxResults}&key=${GOOGLE_BOOKS_API_KEY}`
+//     );
+//     const data = await response.json();
+//     return data.items || [];
+//   } catch (error) {
+//     console.error("Fetch Error:", error);
+//     return [];
+//   }
+// };
 export const fetchBooksByGenre = async (genre: string, maxResults = 10) => {
   try {
     const response = await fetch(
       `${BASE_URL}?q=subject:${genre}&maxResults=${maxResults}&key=${GOOGLE_BOOKS_API_KEY}`
     );
     const data = await response.json();
-    return data.items || [];
+    
+    if (!data.items) return [];
+
+    // WE KEEP THE RAW STRUCTURE BUT FIX THE IMAGE SECURITY
+    return data.items.map((item: any) => {
+      // 1. We keep volumeInfo so your HomeScreen doesn't "vanish"
+      const volumeInfo = item.volumeInfo || {};
+      
+      // 2. We specifically target the thumbnail inside the object
+      if (volumeInfo.imageLinks && volumeInfo.imageLinks.thumbnail) {
+        // THE APK FIX: Convert http to https
+        volumeInfo.imageLinks.thumbnail = volumeInfo.imageLinks.thumbnail.replace('http://', 'https://');
+      }
+
+      // Return the item exactly as the Home Screen expects it
+      return item; 
+    });
   } catch (error) {
     console.error("Fetch Error:", error);
     return [];
@@ -24,30 +52,7 @@ export const fetchBooksByGenre = async (genre: string, maxResults = 10) => {
 };
 
 
-// Helper function to extract and clean only the metadata our app actually cares about
-const cleanBookData = (items: any[]) => {
-  if (!items) return [];
-  
-  return items.map((item: any) => {
-    const volumeInfo = item.volumeInfo || {};
-    
-    // Safely parse out ISBN-13 or ISBN-10 for future database linking
-    const identifiers = volumeInfo.industryIdentifiers || [];
-    const isbnObj = identifiers.find((id: any) => id.type === 'ISBN_13') || 
-                    identifiers.find((id: any) => id.type === 'ISBN_10');
 
-    return {
-      id: item.id, // Permanent Google reference ID
-      title: volumeInfo.title || 'Untitled Book',
-      authors: volumeInfo.authors || ['Unknown Author'],
-      publisher: volumeInfo.publisher || 'Unknown Publisher',
-      description: volumeInfo.description || 'No description available.',
-      // Force HTTPS for thumbnails so images load securely inside the Android APK build
-      thumbnail: volumeInfo.imageLinks?.thumbnail ? volumeInfo.imageLinks.thumbnail.replace('http://', 'https://') : undefined,
-      isbn: isbnObj ? isbnObj.identifier : undefined,
-    };
-  });
-};
 export const searchBooks = async (query: string, maxResults = 20) => {
   if (!query.trim()) return [];
   

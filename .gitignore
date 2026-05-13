@@ -89,3 +89,18 @@ src/api/private.ts
 #ks
 .env
 env.d.ts
+
+
+# Scrap/Zombie folders from Android builds
+node_modules_react-native*
+node_modules_*
+.cxx/
+android/.gradle/
+android/app/build/
+
+# Android build artifacts
+android/app/build/
+android/.gradle/
+.cxx/
+node_modules_react-native*
+*.apk
